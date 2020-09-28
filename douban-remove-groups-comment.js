@@ -13,7 +13,7 @@ const tid = location.href.match(/topic\/(\d+)\//)[1]
 const ck = get_cookie("ck")
 
 if (topicAdminOpts.children().length > 0) {
-    topicAdminOpts.append('<span class="fleft"><a id="auto-del">删除当页评论</a></span>')
+    topicAdminOpts.append('<span class="fleft" style="color:#c6c6c6;"><a id="auto-del">删除当页评论</a></span>')
 } else {
      $('.report').append('<span class="" style="color:#c6c6c6;"><span class="lnk-opt-line""> | </span><a id="auto-del">删评</a></span>')
 }
@@ -30,8 +30,26 @@ async function delPageComment(e) {
     $('.topic-reply li:contains(删除)').trigger( "mouseover" ); // 使用豆瓣自带脚本，移除无权限删除的回复
     let topicReply = $('.topic-reply li:contains(删除)')
     for (let i = 0; i < topicReply.length; i++) {
-        await delComment(i, topicReply[i])
+        if (topicAdminOpts.children().length > 0) {
+            await delComment(i, topicReply[i])
+        } else {
+            await delSelfComment(i, topicReply[i])
+        }
     }
+}
+
+function delSelfComment(i, e) {
+    return new Promise(function (resolve, reject) {
+      let cid = $(e).data('cid')
+      $.post(`/j/group/topic/${tid}/remove_comment`, {
+          ck: ck,
+          cid: cid
+        }, function(){
+          let content = $(e).find(".reply-content").html()
+          topicAdminOpts.append(`<div>成功删除第${i+1}条评论：${content.substring(0, 20)}...</div>`)
+          resolve()
+      })
+    });
 }
 
 function delComment(i, e) {
@@ -50,5 +68,4 @@ function delComment(i, e) {
       })
     });
 }
-
 
